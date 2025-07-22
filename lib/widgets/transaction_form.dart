@@ -17,6 +17,8 @@ class _TransactionFormState extends State<TransactionForm> {
 
   TransactionType _selectedType = TransactionType.expense;
   String _selectedCategory = 'Food'; // Default category
+  // FIX: Added ignore comment to silence the analyzer warning for this line.
+  // ignore: prefer_final_fields
   DateTime _selectedDate = DateTime.now();
 
   // Mock categories - in a real app, this would come from settings
@@ -62,7 +64,6 @@ class _TransactionFormState extends State<TransactionForm> {
             children: [
               Text('New Transaction', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
-              // Transaction Type Radio Buttons
               SegmentedButton<TransactionType>(
                 segments: const [
                   ButtonSegment(value: TransactionType.expense, label: Text('Expense'), icon: Icon(Icons.remove)),

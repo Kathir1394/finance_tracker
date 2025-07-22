@@ -9,18 +9,13 @@ class TransactionListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDarkMode ? const Color(0xFF2A2A40) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final textColor = Theme.of(context).colorScheme.onSurface;
     final isExpense = transaction.type == TransactionType.expense;
-    final amountColor = isExpense ? Colors.redAccent : Colors.green;
+    final amountColor = isExpense ? Colors.redAccent : Colors.greenAccent.shade400;
     final amountPrefix = isExpense ? '- ' : '+ ';
 
     return Card(
-      color: cardColor,
-      elevation: 1,
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: amountColor.withAlpha(50),
@@ -35,7 +30,8 @@ class TransactionListItem extends StatelessWidget {
         ),
         subtitle: Text(
           '${transaction.category} • ${DateFormat.yMMMd().format(transaction.date)}',
-          style: TextStyle(color: textColor.withOpacity(0.7)),
+          // FIX: Replaced deprecated withOpacity with withAlpha
+          style: TextStyle(color: textColor.withAlpha(180)),
         ),
         trailing: Text(
           '$amountPrefix₹${transaction.amount.toStringAsFixed(2)}',
