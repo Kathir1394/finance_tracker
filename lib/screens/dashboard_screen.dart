@@ -182,13 +182,9 @@ class _StatCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+            Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withAlpha(180))),
             const SizedBox(height: 4),
-            Text(
-              format.format(amount),
-              style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(format.format(amount), style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
           ],
         ),
       ),

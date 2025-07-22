@@ -23,7 +23,7 @@ class TransactionListItem extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: amountColor.withOpacity(0.2),
+          backgroundColor: amountColor.withAlpha(50),
           child: Icon(
             isExpense ? Icons.arrow_downward : Icons.arrow_upward,
             color: amountColor,

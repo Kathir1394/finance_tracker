@@ -72,7 +72,7 @@ class _GoalsView extends StatelessWidget {
                         value: progress,
                         minHeight: 12,
                         borderRadius: BorderRadius.circular(6),
-                        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                       ),
                       const SizedBox(height: 8),

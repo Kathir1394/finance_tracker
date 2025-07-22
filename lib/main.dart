@@ -9,7 +9,7 @@ import 'screens/transactions_screen.dart';
 import 'screens/investments_screen.dart';
 import 'screens/planning_screen.dart';
 import 'screens/settings_screen.dart';
-import 'theme/app_theme.dart'; // Import the new theme file
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +37,6 @@ class FinanceTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Finance Tracker',
-      // Use the new theme definitions
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
@@ -106,7 +105,6 @@ class _MainAppShellState extends State<MainAppShell> {
           BottomNavigationBarItem(icon: Icon(Icons.edit_calendar_outlined), activeIcon: Icon(Icons.edit_calendar), label: 'Planning'),
         ],
         currentIndex: _selectedIndex,
-        // Theming is now handled by the main theme file
         onTap: _onItemTapped,
       ),
     );
