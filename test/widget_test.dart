@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:finance_tracker/main.dart';
@@ -48,8 +49,8 @@ void main() {
       // Build our app and trigger a frame.
       await tester.pumpWidget(const FinanceTrackerApp());
 
-      // Verify that the Dashboard screen is visible by checking for its title.
-      expect(find.text('Dashboard'), findsOneWidget);
+      // FIX: Verify that the Dashboard screen is visible by checking for its title specifically within the AppBar.
+      expect(find.descendant(of: find.byType(AppBar), matching: find.text('Dashboard')), findsOneWidget);
 
       // Verify that one of the stat cards is present.
       expect(find.text('Net Flow'), findsOneWidget);
