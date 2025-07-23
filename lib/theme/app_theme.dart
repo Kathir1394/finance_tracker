@@ -22,30 +22,38 @@ class AppTheme {
       seedColor: const Color(0xFF4A90E2),
       primary: const Color(0xFF4A90E2),
       secondary: const Color(0xFF50E3C2),
-      surface: Colors.white, // Card color
-      onSurface: Colors.black, // Text on card color
+      surface: Colors.white,
+      onSurface: const Color(0xFF1C1C2E),
     ),
     scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+    fontFamily: 'Inter',
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFFF3F4F6),
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
-      iconTheme: IconThemeData(color: Colors.black),
+      scrolledUnderElevation: 0,
+      titleTextStyle: TextStyle(
+          color: Color(0xFF1C1C2E),
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Inter'),
+      iconTheme: IconThemeData(color: Color(0xFF1C1C2E)),
     ),
-    // FIX: Removed 'const' because BorderRadius.circular is not a const constructor
     cardTheme: CardThemeData(
-      elevation: 2,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 0,
+      color: Colors.white.withAlpha(178),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.white.withAlpha(230), width: 1.5),
+      ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
-      selectedItemColor: Color(0xFF4A90E2),
-      unselectedItemColor: Colors.grey,
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: Colors.white.withAlpha(200),
+      selectedItemColor: const Color(0xFF4A90E2),
+      unselectedItemColor: Colors.grey.shade500,
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
+      elevation: 0,
     ),
-    fontFamily: 'Inter',
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -55,30 +63,38 @@ class AppTheme {
       seedColor: const Color(0xFF50E3C2),
       primary: const Color(0xFF50E3C2),
       secondary: const Color(0xFF4A90E2),
-      surface: const Color(0xFF2A2A40), // Card color
-      onSurface: Colors.white, // Text on card color
+      surface: const Color(0xFF2A2A40),
+      onSurface: Colors.white,
       brightness: Brightness.dark,
     ),
     scaffoldBackgroundColor: const Color(0xFF1C1C2E),
+    fontFamily: 'Inter',
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1C1C2E),
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+      scrolledUnderElevation: 0,
+      titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Inter'),
       iconTheme: IconThemeData(color: Colors.white),
     ),
-    // FIX: Removed 'const' because BorderRadius.circular is not a const constructor
     cardTheme: CardThemeData(
-      elevation: 2,
-      color: const Color(0xFF2A2A40),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 0,
+      color: const Color(0xFF1C1C2E).withAlpha(128),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.white.withAlpha(51), width: 1.5),
+      ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF2A2A40),
-      selectedItemColor: Color(0xFF50E3C2),
-      unselectedItemColor: Colors.grey,
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: const Color(0xFF2A2A40).withAlpha(200),
+      selectedItemColor: const Color(0xFF50E3C2),
+      unselectedItemColor: Colors.grey.shade400,
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
+      elevation: 0,
     ),
-    fontFamily: 'Inter',
   );
 }

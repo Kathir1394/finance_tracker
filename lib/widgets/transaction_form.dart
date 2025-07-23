@@ -4,7 +4,9 @@ import 'package:uuid/uuid.dart';
 import '../models/transaction.dart';
 
 class TransactionForm extends StatefulWidget {
-  const TransactionForm({super.key});
+  final Transaction? transaction; // Optional transaction for editing
+
+  const TransactionForm({super.key, this.transaction});
 
   @override
   State<TransactionForm> createState() => _TransactionFormState();
@@ -12,48 +14,87 @@ class TransactionForm extends StatefulWidget {
 
 class _TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  final _amountController = TextEditingController();
+  late TextEditingController _descriptionController;
+  late TextEditingController _amountController;
+  late TextEditingController _storeController;
+  late TextEditingController _notesController;
 
-  TransactionType _selectedType = TransactionType.expense;
-  String _selectedCategory = 'Food'; // Default category
-  // FIX: Added ignore comment to silence the analyzer warning for this line.
-  // ignore: prefer_final_fields
-  DateTime _selectedDate = DateTime.now();
+  late TransactionType _selectedType;
+  late String _selectedCategory;
+  late String _selectedPaymentMethod;
+  late DateTime _selectedDate;
+  late bool _isRecurring;
 
-  // Mock categories - in a real app, this would come from settings
-  final List<String> _categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Salary', 'Gifts'];
+  // Mock categories & payment methods - will be moved to settings
+  final List<String> _incomeCategories = ['Salary', 'Gifts', 'Investments'];
+  final List<String> _expenseCategories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment'];
+  final List<String> _paymentMethods = ['Cash', 'UPI', 'Credit Card', 'Debit Card', 'Net Banking'];
+
+  @override
+  void initState() {
+    super.initState();
+    final transaction = widget.transaction;
+
+    _descriptionController = TextEditingController(text: transaction?.description ?? '');
+    _amountController = TextEditingController(text: transaction?.amount.toString() ?? '');
+    _storeController = TextEditingController(text: transaction?.store ?? '');
+    _notesController = TextEditingController(text: transaction?.notes ?? '');
+
+    _selectedType = transaction?.type ?? TransactionType.expense;
+    _selectedCategory = transaction?.category ?? (_selectedType == TransactionType.expense ? _expenseCategories.first : _incomeCategories.first);
+    _selectedPaymentMethod = transaction?.paymentMethod ?? _paymentMethods.first;
+    _selectedDate = transaction?.date ?? DateTime.now();
+    _isRecurring = transaction?.isRecurring ?? false;
+  }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final newTransaction = Transaction(
-        id: const Uuid().v4(),
+      final box = Hive.box<Transaction>('transactions');
+      
+      final transactionData = Transaction(
+        id: widget.transaction?.id ?? const Uuid().v4(),
         description: _descriptionController.text,
         amount: double.parse(_amountController.text),
         category: _selectedCategory,
         date: _selectedDate,
         type: _selectedType,
-        paymentMethod: 'Cash', // Placeholder
-        isRecurring: false, // Placeholder
+        paymentMethod: _selectedPaymentMethod,
+        store: _storeController.text,
+        notes: _notesController.text,
+        isRecurring: _isRecurring,
       );
 
-      final box = Hive.box<Transaction>('transactions');
-      await box.add(newTransaction);
+      if (widget.transaction != null) {
+        // Update existing transaction
+        await widget.transaction!.delete(); // Hive needs delete before put to update key
+      }
+      await box.put(transactionData.id, transactionData);
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close the bottom sheet
+        Navigator.of(context).pop();
       }
     }
   }
+  
+  void _deleteTransaction() {
+    if (widget.transaction != null) {
+      widget.transaction!.delete();
+      Navigator.of(context).pop();
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
+    final categories = _selectedType == TransactionType.expense ? _expenseCategories : _incomeCategories;
+    if (!categories.contains(_selectedCategory)) {
+      _selectedCategory = categories.first;
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        top: 16,
-        left: 16,
-        right: 16,
+        top: 16, left: 16, right: 16,
       ),
       child: Form(
         key: _formKey,
@@ -62,7 +103,7 @@ class _TransactionFormState extends State<TransactionForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('New Transaction', style: Theme.of(context).textTheme.headlineSmall),
+              Text(widget.transaction == null ? 'New Transaction' : 'Edit Transaction', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
               SegmentedButton<TransactionType>(
                 segments: const [
@@ -73,6 +114,7 @@ class _TransactionFormState extends State<TransactionForm> {
                 onSelectionChanged: (Set<TransactionType> newSelection) {
                   setState(() {
                     _selectedType = newSelection.first;
+                    _selectedCategory = (_selectedType == TransactionType.expense) ? _expenseCategories.first : _incomeCategories.first;
                   });
                 },
               ),
@@ -81,6 +123,8 @@ class _TransactionFormState extends State<TransactionForm> {
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter a description' : null,
+                autocorrect: false, // Disables platform-native autocomplete
+                enableSuggestions: false,
               ),
               TextFormField(
                 controller: _amountController,
@@ -95,25 +139,42 @@ class _TransactionFormState extends State<TransactionForm> {
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: const InputDecoration(labelText: 'Category'),
-                items: _categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedCategory = newValue!;
-                  });
-                },
+                items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                onChanged: (value) => setState(() => _selectedCategory = value!),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedPaymentMethod,
+                decoration: const InputDecoration(labelText: 'Payment Method'),
+                items: _paymentMethods.map((pm) => DropdownMenuItem(value: pm, child: Text(pm))).toList(),
+                onChanged: (value) => setState(() => _selectedPaymentMethod = value!),
+              ),
+              TextFormField(controller: _storeController, decoration: const InputDecoration(labelText: 'Store/Vendor (Optional)')),
+              TextFormField(controller: _notesController, decoration: const InputDecoration(labelText: 'Notes (Optional)'), maxLines: 2),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Mark as Recurring", style: Theme.of(context).textTheme.bodyLarge),
+                  Switch(value: _isRecurring, onChanged: (value) => setState(() => _isRecurring = value)),
+                ],
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text('Save Transaction'),
+              Row(
+                children: [
+                  if (widget.transaction != null)
+                    TextButton.icon(
+                      onPressed: _deleteTransaction,
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  const Spacer(),
+                  TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _submitForm,
+                    child: const Text('Save'),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
             ],
