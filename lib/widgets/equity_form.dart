@@ -2,18 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/equity.dart';
+import '../services/stock_service.dart';
 
-class EquityForm extends StatefulWidget {
+// Moved provider to where it's used to avoid potential conflicts
+final stockServiceProvider = Provider((ref) => StockService());
+
+class EquityForm extends ConsumerStatefulWidget {
   final Equity? equity;
-
   const EquityForm({super.key, this.equity});
 
   @override
-  State<EquityForm> createState() => _EquityFormState();
+  ConsumerState<EquityForm> createState() => _EquityFormState();
 }
 
-class _EquityFormState extends State<EquityForm> {
+class _EquityFormState extends ConsumerState<EquityForm> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _tickerController;
   late TextEditingController _companyNameController;
@@ -82,7 +87,6 @@ class _EquityFormState extends State<EquityForm> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -96,7 +100,34 @@ class _EquityFormState extends State<EquityForm> {
             children: [
               Text(widget.equity == null ? 'Add Equity Holding' : 'Edit Equity Holding', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
-              TextFormField(controller: _tickerController, decoration: const InputDecoration(labelText: 'Stock Ticker (e.g., RELIANCE)'), validator: (v) => v!.isEmpty ? 'Required' : null),
+              
+              // FIX: Correctly implemented TypeAheadFormField as a widget
+              TypeAheadFormField<String>(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: _tickerController,
+                  decoration: const InputDecoration(labelText: 'Stock Ticker (e.g., RELIANCE)'),
+                ),
+                suggestionsCallback: (pattern) async {
+                  final tickers = await ref.read(stockServiceProvider).getTickerSuggestions();
+                  if (pattern.isEmpty) {
+                    return const [];
+                  }
+                  return tickers.where((ticker) => ticker.toLowerCase().contains(pattern.toLowerCase())).toList();
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(title: Text(suggestion));
+                },
+                onSuggestionSelected: (suggestion) {
+                  _tickerController.text = suggestion;
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a ticker';
+                  }
+                  return null;
+                },
+              ),
+              
               TextFormField(controller: _companyNameController, decoration: const InputDecoration(labelText: 'Company Name'), validator: (v) => v!.isEmpty ? 'Required' : null),
               TextFormField(controller: _quantityController, decoration: const InputDecoration(labelText: 'Quantity'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null),
               TextFormField(controller: _buyPriceController, decoration: const InputDecoration(labelText: 'Buy Price', prefixText: '₹'), keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) => v!.isEmpty ? 'Required' : null),

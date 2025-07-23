@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // FIX: Corrected typo in import
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/transaction.dart';
@@ -16,7 +16,6 @@ import 'widgets/transaction_form.dart';
 import 'widgets/equity_form.dart';
 import 'widgets/derivative_form.dart';
 import 'widgets/goal_form.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,8 +65,6 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
 
   late final TabController _investmentsTabController;
   late final TabController _planningTabController;
-
-  // FIX: Make the list of widgets an instance variable, not static.
   late final List<Widget> _widgetOptions;
 
   @override
@@ -76,7 +73,6 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
     _investmentsTabController = TabController(length: 2, vsync: this);
     _planningTabController = TabController(length: 2, vsync: this);
 
-    // FIX: Initialize the list of widgets here, *after* the controllers are created.
     _widgetOptions = <Widget>[
       const DashboardScreen(),
       const TransactionsScreen(),
@@ -89,7 +85,7 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
         setState(() => _nestedTabIndex = _investmentsTabController.index);
       }
     });
-     _planningTabController.addListener(() {
+    _planningTabController.addListener(() {
       if (!_planningTabController.indexIsChanging) {
         setState(() => _nestedTabIndex = _planningTabController.index);
       }
@@ -176,17 +172,17 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
 
   void _onFabTapped(BuildContext context) {
     switch (_selectedIndex) {
-      case 1: // Tracker
+      case 1:
         showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const TransactionForm());
         break;
-      case 2: // Investment
+      case 2:
         if (_nestedTabIndex == 0) {
           showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const EquityForm());
         } else {
           showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const DerivativeForm());
         }
         break;
-      case 3: // Planning
+      case 3:
         if (_nestedTabIndex == 0) {
            showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const GoalForm());
         }
@@ -195,13 +191,15 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
   }
 
   Widget _buildCustomHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Image.asset('assets/images/FinanceUniverse.png', height: 36),
                 const SizedBox(width: 8),

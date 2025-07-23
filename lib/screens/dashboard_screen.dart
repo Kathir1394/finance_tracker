@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:glassmorphism/glassmorphism.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/transaction.dart';
 import '../models/equity.dart';
 import '../models/derivative.dart';
@@ -31,45 +32,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ]),
       builder: (context, _) {
         final transactions = Hive.box<Transaction>('transactions').values.toList();
+        // FIX: Moved equities definition here to be in the correct scope
+        final equities = Hive.box<Equity>('equities').values.toList();
         double totalIncome = transactions.where((t) => t.type == TransactionType.income).fold(0, (sum, item) => sum + item.amount);
         double totalExpense = transactions.where((t) => t.type == TransactionType.expense).fold(0, (sum, item) => sum + item.amount);
         double netFlow = totalIncome - totalExpense;
-        double investmentValue = 320000; // Mock data
+        double investmentValue = equities.fold(0, (sum, item) => sum + (item.quantity * item.buyPrice));
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSummaryGrid(totalIncome, totalExpense, netFlow, investmentValue),
-              const SizedBox(height: 24),
-              _buildAnalyticsSection(transactions),
-              const SizedBox(height: 24),
-              _buildRecentActivitySection(),
-            ],
-          ),
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate(
+                  [
+                    _buildSummaryGrid(totalIncome, totalExpense, netFlow, investmentValue),
+                    const SizedBox(height: 24),
+                    _buildAnalyticsSection(transactions),
+                    const SizedBox(height: 24),
+                    const Text("Recent Activity", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+            _buildRecentActivitySliverList(),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          ],
         );
       },
     );
   }
 
   Widget _buildSummaryGrid(double income, double expense, double netFlow, double investment) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.6,
-      children: [
-        _SummaryTile(title: 'Total Income', amount: income, color: Colors.green),
-        _SummaryTile(title: 'Total Expense', amount: expense, color: Colors.red),
-        _SummaryTile(title: 'Net Cash Flow', amount: netFlow, color: netFlow >= 0 ? Colors.green : Colors.red),
-        _SummaryTile(title: 'Investment Value', amount: investment, color: Colors.purple),
-      ],
+    return GlassmorphicContainer(
+      width: double.infinity,
+      height: 280, // FIX: Added required height
+      borderRadius: 20,
+      blur: 20,
+      alignment: Alignment.center,
+      border: 1.5,
+      linearGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.blue.withAlpha(20),
+          Colors.blue.withAlpha(30),
+        ],
+      ),
+      borderGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.white.withAlpha(100), Colors.white.withAlpha(30)],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Wrap(
+          spacing: 16.0,
+          runSpacing: 16.0,
+          alignment: WrapAlignment.center,
+          children: [
+            _SummaryTile(title: 'Total Income', amount: income),
+            _SummaryTile(title: 'Total Expense', amount: expense),
+            _SummaryTile(title: 'Net Cash Flow', amount: netFlow),
+            _SummaryTile(title: 'Investment Value', amount: investment),
+          ],
+        ),
+      ),
     );
   }
-
+  
   Widget _buildAnalyticsSection(List<Transaction> transactions) {
     final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense).toList();
     
@@ -111,43 +143,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRecentActivitySection() {
+  Widget _buildRecentActivitySliverList() {
     final activities = _getRecentActivities();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Recent Activity", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        activities.isEmpty
-            ? const Center(child: Text("No recent activity yet."))
-            : ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: activities.length,
-                itemBuilder: (context, index) {
-                  final activity = activities[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: activity.iconColor.withAlpha(50),
-                        child: Icon(activity.icon, color: activity.iconColor),
-                      ),
-                      title: Text(activity.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(activity.subtitle),
-                      trailing: activity.amount != null
-                          ? Text(
-                              '₹${activity.amount!.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: activity.iconColor),
-                            )
-                          : null,
-                    ),
-                  );
-                },
+    if (activities.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: SizedBox(height: 100, child: Center(child: Text("No recent activity yet.")))
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final activity = activities[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: activity.iconColor.withAlpha(50),
+                  child: Icon(activity.icon, color: activity.iconColor),
+                ),
+                title: Text(activity.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(activity.subtitle),
+                trailing: activity.amount != null
+                    ? Text(
+                        '₹${activity.amount!.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: activity.iconColor),
+                      )
+                    : null,
               ),
-      ],
+            );
+          },
+          childCount: activities.length,
+        ),
+      ),
     );
   }
 
@@ -244,39 +275,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _SummaryTile extends StatelessWidget {
   final String title;
   final double amount;
-  final Color color;
 
-  const _SummaryTile({required this.title, required this.amount, required this.color});
+  const _SummaryTile({required this.title, required this.amount});
 
   @override
   Widget build(BuildContext context) {
     final format = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    return GlassmorphicContainer(
-      width: 180,
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tileWidth = (screenWidth / 2) - 40;
+
+    final positiveGradient = LinearGradient(
+      colors: [Colors.lightGreenAccent.shade100, Colors.greenAccent.shade700],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    final negativeGradient = LinearGradient(
+      colors: [Colors.red.shade200, Colors.red.shade700],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    Gradient textGradient;
+    if (title == 'Total Expense' || (title == 'Net Cash Flow' && amount < 0)) {
+      textGradient = negativeGradient;
+    } else {
+      textGradient = positiveGradient;
+    }
+
+    return SizedBox(
+      width: tileWidth,
       height: 120,
-      borderRadius: 20,
-      blur: 10,
-      alignment: Alignment.center,
-      border: 2,
-      linearGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color.withAlpha(76), color.withAlpha(153)],
-          stops: const [0.1, 1]),
-      borderGradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Colors.white.withAlpha(128), Colors.white.withAlpha(51)],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(format.format(amount), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Positioned.fill(
+              child: Shimmer.fromColors(
+                baseColor: Colors.black.withAlpha(220),
+                highlightColor: Colors.grey[900]!,
+                period: const Duration(seconds: 5),
+                child: Container(color: Colors.black),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withAlpha(230),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => textGradient.createShader(
+                          Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                        ),
+                        child: Text(
+                          format.format(amount),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

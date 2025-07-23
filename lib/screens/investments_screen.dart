@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/stock_service.dart';
 import '../models/equity.dart';
 import '../models/derivative.dart';
 import '../widgets/equity_form.dart';
 import '../widgets/derivative_form.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 
-class InvestmentsScreen extends StatelessWidget {
+final stockServiceProvider = Provider((ref) => StockService());
+
+class InvestmentsScreen extends ConsumerWidget {
   final TabController tabController;
   const InvestmentsScreen({super.key, required this.tabController});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
+        AppBar(
+          title: const Text('Investments'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh Prices',
+              onPressed: () async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Fetching latest market data...')),
+                );
+                
+                final success = await ref.read(stockServiceProvider).refreshData();
+                
+                scaffoldMessenger.removeCurrentSnackBar();
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(content: Text(success ? 'Stock prices updated!' : 'Failed to update prices.')),
+                );
+              },
+            )
+          ],
+        ),
         TabBar(
           controller: tabController,
           tabs: const [
