@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart'; // FIX: Corrected typo in import
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Your existing model and screen imports
 import 'models/transaction.dart';
 import 'models/equity.dart';
 import 'models/derivative.dart';
@@ -11,22 +13,40 @@ import 'screens/investments_screen.dart';
 import 'screens/planning_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
+
+// Your existing widget imports
 import 'widgets/glassmorphic_nav_bar.dart';
 import 'widgets/transaction_form.dart';
 import 'widgets/equity_form.dart';
 import 'widgets/derivative_form.dart';
 import 'widgets/goal_form.dart';
 
+// ✅ **Step 1: Import the new background widget**
+import 'widgets/common/app_background.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  Hive.registerAdapter(TransactionAdapter());
-  Hive.registerAdapter(TransactionTypeAdapter());
-  Hive.registerAdapter(EquityAdapter());
-  Hive.registerAdapter(DerivativeTradeAdapter());
-  Hive.registerAdapter(TradeTypeAdapter());
-  Hive.registerAdapter(GoalAdapter());
+  // Your Hive registrations remain the same
+  if (!Hive.isAdapterRegistered(TransactionAdapter().typeId)) {
+    Hive.registerAdapter(TransactionAdapter());
+  }
+  if (!Hive.isAdapterRegistered(TransactionTypeAdapter().typeId)) {
+    Hive.registerAdapter(TransactionTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(EquityAdapter().typeId)) {
+    Hive.registerAdapter(EquityAdapter());
+  }
+  if (!Hive.isAdapterRegistered(DerivativeTradeAdapter().typeId)) {
+    Hive.registerAdapter(DerivativeTradeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(TradeTypeAdapter().typeId)) {
+    Hive.registerAdapter(TradeTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(GoalAdapter().typeId)) {
+    Hive.registerAdapter(GoalAdapter());
+  }
 
   await Hive.openBox<Transaction>('transactions');
   await Hive.openBox<Equity>('equities');
@@ -111,21 +131,17 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
   Widget build(BuildContext context) {
     bool showFab = _selectedIndex != 0;
 
+    // ✅ **Step 2: Set the scaffold background to transparent**
+    // This allows the AppBackground to be visible.
     return Scaffold(
+      backgroundColor: Colors.transparent,
       extendBody: true,
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: Theme.of(context).brightness == Brightness.light
-                    ? [const Color(0xFFFFFFFF), const Color(0xFFF8F9FA)]
-                    : [const Color(0xFF1C1C2E), const Color(0xFF1F1F3D)],
-              ),
-            ),
-          ),
+          // ✅ **Step 3: Replace the old gradient Container with the new AppBackground widget**
+          const AppBackground(),
+
+          // The rest of your UI remains exactly the same.
           SafeArea(
             bottom: false,
             child: Column(
@@ -149,7 +165,7 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
               onItemTapped: _onItemTapped,
             ),
           ),
-           Positioned(
+          Positioned(
             bottom: 100,
             right: 20,
             child: AnimatedOpacity(
@@ -184,7 +200,7 @@ class _MainAppShellState extends State<MainAppShell> with TickerProviderStateMix
         break;
       case 3:
         if (_nestedTabIndex == 0) {
-           showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const GoalForm());
+            showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => const GoalForm());
         }
         break;
     }

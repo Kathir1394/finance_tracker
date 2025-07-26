@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class StockService {
   // IMPORTANT: Replace this with your actual Cloud Function Trigger URL
-  final String _cloudFunctionUrl = 'https://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/fetch-bhavcopy';
+  final String _cloudFunctionUrl = 'https://finance-universe-backend-653161986326.asia-south1.run.app';
 
   Map<String, double>? _priceCache;
   List<String>? _tickerCache;
@@ -37,7 +37,7 @@ class StockService {
     return _priceCache?[ticker.toUpperCase()];
   }
 
-  Future<List<String>> getTickerSuggestions() async {
+  Future<List<String>> getTickerSuggestions(String pattern) async {
     if (_tickerCache == null) {
       await refreshData();
     }
